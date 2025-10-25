@@ -1,115 +1,95 @@
 "use client";
-
-import { useEffect, useState } from 'react'  //useState é uma função do React que permite a um componente ter estado interno. 
-import { ICondominio } from '@/services/condominio.service';
+import { getCondominios, ICondominio } from "@/services/condominio.service";
+import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
-// import { ICondominio } from '@/services/condominio.local.service'; //LOCAL REQUEST
-
+ 
 export default function ListaCondominios() {
-  const [condominios, setCondominios]= useState<ICondominio[]>([])
-  const [erro, setErro] = useState<string | null>(null);
+  const [condominios, setCondominios] = useState<ICondominio[]>([]);
+  const [filtro, setFiltro] = useState<string>("");
   const [loading, setLoading] = useState(true);
-   // Estado para capturar o termo digitado na busca
-  const [searchQuery, setSearchQuery] = useState("");
-
-   // Filtra os condomínios com base no termo de busca digitado
-  const condominiosFiltrados = condominios.filter((c) => {
-    const query = searchQuery.toLowerCase();
-    return (
-      c.nome_condominio.toLowerCase().includes(query) ||
-      c.cidade_condominio.toLowerCase().includes(query) ||
-      c.uf_condominio.toLowerCase().includes(query) ||
-      c.tipo_condominio.toLowerCase().includes(query) ||
-      c.endereco_condominio.toLowerCase().includes(query)
-    );
-  });
-  
-  
-
-  useEffect(() => { //hook que executa uma função quando o componente é montado.
+  const [error, setError] = useState<string | null>(null);
+ 
+  useEffect(() => {
     const buscarCondominios = async () => {
       try {
-        const response = await fetch("/api/condominios", { cache: "no-store" });
-        const {data, success, count, error} = await response.json();
-
-        if (!success) throw new Error(error ?? "Erro ao buscar condomínios"); // quando acionado o catch é executado
+        setLoading(true);
+        setError(null);
+        const data = await getCondominios();
         setCondominios(data);
-
-      } catch (e: any) {
-        setErro(e.message ?? "Erro inesperado");
+      } catch (err: any) {
+        setError(err.message || "Erro ao buscar condomínios");
       } finally {
         setLoading(false);
-      }      
+      }
     };
-    buscarCondominios()
-  }, []);// [] = executa apenas uma vez, quando o componente é montado.
-  // Caso haja alguma váriavel no array, o efeito será executado novamente sempre que essa variável mudar.
-
+    buscarCondominios();
+  }, []);
+ 
+  const condominiosFiltrados = condominios.filter((c) => {
+    const texto = filtro.toLowerCase();
+    return (
+      c.nome_condominio?.toLowerCase().includes(texto) ||
+      c.endereco_condominio?.toLowerCase().includes(texto) ||
+      c.cidade_condominio?.toLowerCase().includes(texto) ||
+      c.uf_condominio?.toLowerCase().includes(texto) ||
+      c.tipo_condominio?.toLowerCase().includes(texto)
+    );
+  });
+ 
+  if (loading) return <div className="p-6">Carregando...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
+ 
   return (
     <div className="p-6 max-w-full">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h1 className="text-xl font-semibold">Condomínios</h1>
-      </div>
-
-      {/* Barra de busca e filtros */}
-      <div className="mb-4 flex justify-between gap-4">
-        <div className="relative w-64">
-          <span className="absolute inset-y-0 left-3 flex items-center">
-            <FaSearch className="h-4 w-4 text-gray-400" />
-          </span>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">Condomínios</h1>
+ 
+      {/* Barra de pesquisa */}
+      <div className="mb-6 flex items-center gap-2 w-full max-w-sm">
+        <div className="relative w-full">
+          <FaSearch className="absolute left-3 top-3 text-gray-400" />
           <input
             type="text"
             placeholder="Pesquisar"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 pr-4 py-2 w-full rounded-md border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary text-sm"
+            value={filtro}
+            onChange={(e) => setFiltro(e.target.value)}
+            className="pl-10 pr-3 py-2 w-full border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
           />
         </div>
       </div>
-
-      <div className="bg-white rounded-md border border-gray-200 overflow-hidden">
+ 
+{/*Tabela de condomínios*/}
+      <div className="overflow-x-auto bg-white rounded-lg shadow border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider w-12">#</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Nome</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Endereço</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Cidade</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">UF</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Tipo</th>
-              {/* tipo: Residencial e comercial*/}          
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 tracking-wider">Ação</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endereço</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cidade</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UF</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ação</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-             {loading ? (
+          <tbody className="bg-white divide-y divide-gray-200">
+            {condominiosFiltrados.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-3 text-center text-gray-500">
-                  Carregando condomínios...
-                </td>
-              </tr>
-            ) : erro ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-3 text-center text-red-600">
-                  {erro}
-                </td>
-              </tr>
-            ) :condominios.length === 0 ? (
-              <tr>
-                <td className="px-4 py-3 text-sm text-gray-700" colSpan={7}>
-                  Nenhum condomínio encontrado.
+                <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                  Nenhum condomínio encontrado
                 </td>
               </tr>
             ) : (
-              condominiosFiltrados.map((condominio, index) => (
-                <tr key={condominio.id_condominio} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{String(index + 1)}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{condominio.nome_condominio}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{condominio.endereco_condominio}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{condominio.cidade_condominio}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{condominio.uf_condominio}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{condominio.tipo_condominio}</td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500"></td>
+              condominiosFiltrados.map((c, i) => (
+                <tr key={c.id_condominio} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{i + 1}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.nome_condominio}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.endereco_condominio}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.cidade_condominio}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.uf_condominio}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{c.tipo_condominio}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <button className="text-blue-600 hover:text-blue-800 font-medium">Editar</button>
+                  </td>
                 </tr>
               ))
             )}
@@ -119,3 +99,5 @@ export default function ListaCondominios() {
     </div>
   );
 }
+ 
+ 

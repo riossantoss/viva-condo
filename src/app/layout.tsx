@@ -4,8 +4,6 @@ import "./globals.css";
 import Menu from "../components/menu";
 import { createClient } from "@/utils/supabase/server";
 
-const supabase = createClient();
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

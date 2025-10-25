@@ -1,4 +1,4 @@
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/utils/supabase/client";
 
 export interface ICondominio {
     id_condominio: number;
@@ -13,7 +13,7 @@ export interface ICondominio {
 
 export async function getCondominios() {
 
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase.from("condominio").select("*").order("id_condominio");
 
   if (error) throw new Error(error.message); //exceção - objeto error.message
